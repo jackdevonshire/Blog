@@ -10,6 +10,7 @@ from datetime import datetime
 DISCORD_WEBHOOK_URL = ""
 WEBHOOK_MESSAGE_ID = ""
 HOST_IP = ""
+DYNAMIC_DNS_URL = ""
 
 if WEBHOOK_MESSAGE_ID == "" and DISCORD_WEBHOOK_URL != "":
     DiscordWebhook(url=DISCORD_WEBHOOK_URL, content="This is the first time running the MC Bedrock server script. Right click on this message, click 'Copy Message Id' and then place then add this to the WEBHOOK_MESSAGE_ID variable in this script! Then reboot the server!").execute()
@@ -43,6 +44,13 @@ def alter_webhook(status, message):
     webhook.edit()
 
 def startup():
+    # Update dynamic DNS service with server IP
+    if DYNAMIC_DNS_URL != "":
+        try:
+            requests.get(DYNAMIC_DNS_URL)
+        except:
+            pass
+    
     # Start MC server
     alter_webhook("Starting Up", "Server is starting up")
     os.system("start C:\\Users\\Administrator\\Desktop\\server\\bedrock_server")
