@@ -5,7 +5,7 @@ DYNAMIC_DNS_URL = ""
 SERVER_PORT = 19132
 
 # How often the server checks the player count
-CHECK_INTERVAL_MINUTES = 15
+CHECK_INTERVAL_MINUTES = 10
 # Once no players are detected, recheck after this amount of time before shutting down the server
 COOLDOWN_INTERVAL_MINUTES = 5
 
@@ -103,7 +103,7 @@ def main_loop():
                 time.sleep(COOLDOWN_INTERVAL_MINUTES * 60)
                 players = get_server_players()
                 if players < 1:
-                    stop_server_and_ec2("No players detected for 15 minutes")
+                    stop_server_and_ec2("No players detected for " + str(CHECK_INTERVAL_MINUTES + COOLDOWN_INTERVAL_MINUTES) + " minutes")
                 
             alter_webhook("Online", "Server is online and has " + str(players) + " active players")
 
