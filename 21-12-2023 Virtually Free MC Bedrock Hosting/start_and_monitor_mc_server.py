@@ -25,8 +25,8 @@ try:
 except:
     os.system("py -m pip install discord-webhook")
     os.system("py -m pip install mcstats")
-    print("Error loading script, try reloading")
-    quit()
+    from discord_webhook import DiscordWebhook, DiscordEmbed
+    from mcstats import mcstats
 
 if WEBHOOK_MESSAGE_ID == "" and DISCORD_WEBHOOK_URL != "":
     DiscordWebhook(url=DISCORD_WEBHOOK_URL, content="This is the first time running the MC Bedrock server script. Right click on this message, click 'Copy Message Id' and then place then add this to the WEBHOOK_MESSAGE_ID variable in this script! Then reboot the server!").execute()
