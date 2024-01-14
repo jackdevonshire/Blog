@@ -105,7 +105,7 @@ def main_loop():
                 if players < 1:
                     stop_server_and_ec2("No players detected for 15 minutes")
                 
-            alter_webhook("Online", "Server is online and has " + str(players["online"]) + " active players")
+            alter_webhook("Online", "Server is online and has " + str(players) + " active players")
 
             
     except Exception as e:
