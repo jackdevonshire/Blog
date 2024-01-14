@@ -1,22 +1,38 @@
-# py -m pip install discord-webhook
-from discord_webhook import DiscordWebhook, DiscordEmbed
+###### Configuration ######
+DISCORD_WEBHOOK_URL = ""
+WEBHOOK_MESSAGE_ID = ""
+DYNAMIC_DNS_URL = ""
+SERVER_PORT = 19132
+
+# How often the server checks the player count
+CHECK_INTERVAL_MINUTES = 15
+# Once no players are detected, recheck after this amount of time before shutting down the server
+COOLDOWN_INTERVAL_MINUTES = 5
+
+
+
+###### Main Program ######
+
+# Startup
 import os
 import time
 import requests
 from datetime import datetime
 
-
-# https://pypi.org/project/discord-webhook/
-DISCORD_WEBHOOK_URL = ""
-WEBHOOK_MESSAGE_ID = ""
-HOST_IP = ""
-DYNAMIC_DNS_URL = ""
+try:
+    from discord_webhook import DiscordWebhook, DiscordEmbed
+    from mcstats import mcstats
+except:
+    os.system("py -m pip install discord-webhook")
+    os.system("py -m pip install mcstats")
+    print("Error loading script, try reloading")
+    quit()
 
 if WEBHOOK_MESSAGE_ID == "" and DISCORD_WEBHOOK_URL != "":
     DiscordWebhook(url=DISCORD_WEBHOOK_URL, content="This is the first time running the MC Bedrock server script. Right click on this message, click 'Copy Message Id' and then place then add this to the WEBHOOK_MESSAGE_ID variable in this script! Then reboot the server!").execute()
     quit()
 
-
+# Main Methods
 def alter_webhook(status, message):
     if (DISCORD_WEBHOOK_URL == ""):
         return
@@ -43,6 +59,13 @@ def alter_webhook(status, message):
     webhook.add_embed(status_embed)
     webhook.edit()
 
+def get_server_players():
+    try:
+        with mcstats("localhost", port=SERVER_PORT, timeout=10) as data:
+            return data.num_players
+    except:
+        return -1
+
 def startup():
     # Update dynamic DNS service with server IP
     if DYNAMIC_DNS_URL != "":
@@ -64,25 +87,22 @@ def startup():
 def main_loop():
     try:
         while True:
-            # Check server status every ten minutes
-            time.sleep(600)
+            # Check server player count every x minutes
+            time.sleep(CHECK_INTERVAL_MINUTES*60)
             alter_webhook("Online", "Checking player count")
-            response = requests.get("https://api.mcstatus.io/v2/status/bedrock/"+HOST_IP)
-            json = response.json()
+            players = get_server_players()
 
-            if not json["online"]:
+            # If MC Server is stopped, then shutdown the server
+            if players == -1:
                 stop_server_and_ec2("Server unexpectedly appeared offline")
         
-            players = json["players"]
-            if players["online"] == 0:
-                # If no players, wait another 5 minutes and if still no players, stop the server
-                alter_webhook("Shutting Down", "No players detected. Server will shut down if no players join in the next 5 minutes")
+            if players == 0:
+                # If no players, wait another x minutes and recheck before shutting down
+                alter_webhook("Shutting Down", "No players detected. Server will shut down if no players join in the next " + str(COOLDOWN_INTERVAL_MINUTES) + " minutes")
 
-                time.sleep(300)
-                response = requests.get("https://api.mcstatus.io/v2/status/bedrock/"+HOST_IP)
-                json = response.json()
-                players = json["players"]
-                if players["online"] == 0:
+                time.sleep(COOLDOWN_INTERVAL_MINUTES * 60)
+                players = get_server_players()
+                if players < 1:
                     stop_server_and_ec2("No players detected for 15 minutes")
                 
             alter_webhook("Online", "Server is online and has " + str(players["online"]) + " active players")
@@ -90,8 +110,6 @@ def main_loop():
             
     except Exception as e:
         stop_server_and_ec2("An unexpected error ocurred: " + str(e))
-
-
 
 def stop_server_and_ec2(message):
     alter_webhook("Offline", "Server has been stopped - " + message)
@@ -101,7 +119,5 @@ def stop_server_and_ec2(message):
     if (DISCORD_WEBHOOK_URL != ""):
         DiscordWebhook(url=DISCORD_WEBHOOK_URL, content="FAILED TO STOP SERVER").execute()
 
-
 startup()
 main_loop()
-
