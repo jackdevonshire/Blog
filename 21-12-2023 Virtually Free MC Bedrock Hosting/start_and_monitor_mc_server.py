@@ -84,6 +84,10 @@ def startup():
     # Server Started
     alter_webhook("Online", "The server is online")
 
+    # Wait another two minutes before starting main loop, to allow time to log into server and stop the script
+    # incase a user wants to make any changes - or there are any issues
+    time.sleep(120)
+
 def main_loop():
     try:
         while True:
